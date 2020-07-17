@@ -61,6 +61,7 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, BarChartData
             .max() ?? 1
     }
     
+    // MARK: - Loi custom
     open override func calcMinMax(entry e: ChartDataEntry)
     {
         guard let e = e as? BarChartDataEntry,
@@ -69,8 +70,33 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, BarChartData
         
         if e.yValues == nil
         {
-            _yMin = Swift.min(e.y, _yMin)
-            _yMax = Swift.max(e.y, _yMax)
+            if e.y < _yMin
+                {
+                    _yMin = e.y
+                }
+                
+                if e.y > _yMax
+                {
+                    _yMax = e.y
+                }
+                
+                if let industryLow = e.industryLow {
+                    if industryLow < _yMin {
+                        _yMin = industryLow
+                    }
+                    if industryLow > _yMax {
+                        _yMax = industryLow
+                    }
+                }
+                
+                if let industryHigh = e.industryHigh {
+                    if industryHigh < _yMin {
+                        _yMin = industryHigh
+                    }
+                    if industryHigh > _yMax {
+                        _yMax = industryHigh
+                    }
+                }
         }
         else
         {
