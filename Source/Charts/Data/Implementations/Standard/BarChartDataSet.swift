@@ -88,26 +88,37 @@ open class BarChartDataSet: BarLineScatterCandleBubbleChartDataSet, IBarChartDat
             if e.yValues == nil
             {
                 if e.y < _yMin
-                {
-                    _yMin = e.y
-                }
-                
-                if e.y > _yMax
-                {
-                    _yMax = e.y
-                }
+                    {
+                        _yMin = e.y
+                    }
+                    
+                    if e.y > _yMax
+                    {
+                        _yMax = e.y
+                    }
+                    
+                    if let industryLow = e.industryLow {
+                        if industryLow < _yMin {
+                            _yMin = industryLow
+                        }
+                        if industryLow > _yMax {
+                            _yMax = industryLow
+                        }
+                    }
+                    
+                    if let industryHigh = e.industryHigh {
+                        if industryHigh < _yMin {
+                            _yMin = industryHigh
+                        }
+                        if industryHigh > _yMax {
+                            _yMax = industryHigh
+                        }
+                    }
             }
             else
             {
-                if -e.negativeSum < _yMin
-                {
-                    _yMin = -e.negativeSum
-                }
-                
-                if e.positiveSum > _yMax
-                {
-                    _yMax = e.positiveSum
-                }
+                _yMin = Swift.min(-e.negativeSum, _yMin)
+                _yMax = Swift.max(e.positiveSum, _yMax)
             }
             
             calcMinMaxX(entry: e)

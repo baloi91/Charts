@@ -431,6 +431,27 @@ open class HorizontalBarChartRenderer: BarChartRenderer
                                 y: py,
                                 size: icon.size)
                         }
+                        
+                        // MARK: - Loi custom
+                        let imageWidth:CGFloat = 12
+                        if let industryLow = e.industryLow {
+                            let trans = dataProvider.getTransformer(forAxis: dataSet.axisDependency)
+                            let resPoint = trans.pixelForValues(x: industryLow, y: 0)
+                            let px = resPoint.x - imageWidth/2
+                                + (val >= 0.0 ? posOffset : negOffset)
+                            let py = y
+                            
+                            ChartUtils.drawImage(context: context, image: NSUIImage(named: "industry-low")!, x: px, y: py, size: CGSize(width: imageWidth, height: 16))
+                        }
+                        if let industryHigh = e.industryHigh {
+                            let trans = dataProvider.getTransformer(forAxis: dataSet.axisDependency)
+                            let resPoint = trans.pixelForValues(x: industryHigh, y: 0)
+                            let px = resPoint.x - imageWidth/2
+                                + (val >= 0.0 ? posOffset : negOffset)
+                            let py = y
+                            
+                            ChartUtils.drawImage(context: context, image: NSUIImage(named: "industry-high")!, x: px, y: py, size: CGSize(width: imageWidth, height: 16))
+                        }
                     }
                 }
                 else

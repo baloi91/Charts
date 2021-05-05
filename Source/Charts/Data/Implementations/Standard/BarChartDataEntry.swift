@@ -13,6 +13,11 @@ import Foundation
 
 open class BarChartDataEntry: ChartDataEntry
 {
+    private var _iconVals: [Double]?
+    private var _iconList: [NSUIImage]?
+    private var _industryLow: Double?
+    private var _industryHigh: Double?
+    
     /// the values the stacked barchart holds
     private var _yVals: [Double]?
     
@@ -58,6 +63,21 @@ open class BarChartDataEntry: ChartDataEntry
         self.data = data
     }
     
+    /// Constructor for Loi's custom icons
+    public convenience init(x: Double, y: Double, iconValues: [Double], iconList: [NSUIImage])
+    {
+        self.init(x: x, y: y)
+        self.iconVals = iconValues
+        self.iconList = iconList
+    }
+    
+    public convenience init(x: Double, y: Double, industryLow: Double, industryHigh: Double)
+    {
+        self.init(x: x, y: y)
+        self.industryLow = industryLow
+        self.industryHigh = industryHigh
+    }
+    
     /// Constructor for stacked bar entries.
     @objc public init(x: Double, yValues: [Double])
     {
@@ -89,22 +109,14 @@ open class BarChartDataEntry: ChartDataEntry
         self.data = data
     }
     
-    @objc open func sumBelow(stackIndex :Int) -> Double
+    @objc open func sumBelow(stackIndex: Int) -> Double
     {
-        guard let yVals = _yVals else
+        guard let yVals = _yVals, yVals.indices.contains(stackIndex) else
         {
             return 0
         }
-        
-        var remainder: Double = 0.0
-        var index = yVals.count - 1
-        
-        while (index > stackIndex && index >= 0)
-        {
-            remainder += yVals[index]
-            index -= 1
-        }
-        
+
+        let remainder = yVals[stackIndex...].reduce(into: 0.0) { $0 += $1 }
         return remainder
     }
     
@@ -120,9 +132,25 @@ open class BarChartDataEntry: ChartDataEntry
         return _positiveSum
     }
 
+    var stackSize: Int { yValues?.count ?? 1}
+
     @objc open func calcPosNegSum()
     {
         (_negativeSum, _positiveSum) = _yVals?.reduce(into: (0,0)) { (result, y) in
+            if y < 0
+            {
+                result.0 += -y
+            }
+            else
+            {
+                result.1 += y
+            }
+        } ?? (0,0)
+    }
+    
+    @objc open func calcPosNegSumIcons()
+    {
+        (_negativeSum, _positiveSum) = _iconVals?.reduce(into: (0,0)) { (result, y) in
             if y < 0
             {
                 result.0 += -y
@@ -172,10 +200,45 @@ open class BarChartDataEntry: ChartDataEntry
         }
     }
     
+    @objc open func calcRangesIcons()
+    {
+        guard let values = iconVals, !values.isEmpty else { return }
+
+        if _ranges == nil
+        {
+            _ranges = [Range]()
+        }
+        else
+        {
+            _ranges!.removeAll()
+        }
+        
+        _ranges!.reserveCapacity(values.count)
+        
+        var negRemain = -negativeSum
+        var posRemain: Double = 0.0
+        
+        for value in values
+        {
+            if value < 0
+            {
+                _ranges!.append(Range(from: negRemain, to: negRemain - value))
+                negRemain -= value
+            }
+            else
+            {
+                _ranges!.append(Range(from: posRemain, to: posRemain + value))
+                posRemain += value
+            }
+        }
+    }
+    
     // MARK: Accessors
     
     /// the values the stacked barchart holds
     @objc open var isStacked: Bool { return _yVals != nil }
+    
+    @objc open var isHasMultipleIcons: Bool { return _iconVals != nil }
     
     /// the values the stacked barchart holds
     @objc open var yValues: [Double]?
@@ -183,10 +246,49 @@ open class BarChartDataEntry: ChartDataEntry
         get { return self._yVals }
         set
         {
-            self.y = BarChartDataEntry.calcSum(values: newValue)
+            self.y = BarChartDataEntry.calcSum(values: newValue ?? [])
             self._yVals = newValue
             calcPosNegSum()
             calcRanges()
+        }
+    }
+    
+    open var industryLow: Double?
+    {
+        get { return self._industryLow }
+        set
+        {
+            self._industryLow = newValue
+        }
+    }
+    
+    open var industryHigh: Double?
+    {
+        get { return self._industryHigh }
+        set
+        {
+            self._industryHigh = newValue
+        }
+    }
+    
+    /// the values the stacked barchart holds
+    @objc open var iconVals: [Double]?
+    {
+        get { return self._iconVals }
+        set
+        {
+            self._iconVals = newValue
+            calcPosNegSumIcons()
+            calcRangesIcons()
+        }
+    }
+    
+    @objc open var iconList: [NSUIImage]?
+    {
+        get { return self._iconList }
+        set
+        {
+            self._iconList = newValue
         }
     }
     
@@ -213,18 +315,8 @@ open class BarChartDataEntry: ChartDataEntry
     /// - Parameters:
     ///   - vals:
     /// - Returns:
-    private static func calcSum(values: [Double]?) -> Double
+    private static func calcSum(values: [Double]) -> Double
     {
-        guard let values = values
-            else { return 0.0 }
-        
-        var sum = 0.0
-        
-        for f in values
-        {
-            sum += f
-        }
-        
-        return sum
+        values.reduce(into: 0, +=)
     }
 }
